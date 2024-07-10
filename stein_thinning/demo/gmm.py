@@ -8,7 +8,7 @@ from stein_thinning.thinning import thin
 from stein_thinning.kernel import make_imq, make_precon
 
 # Read MCMC output from files
-dir = join(dirname(__file__), 'sample_chains/gmm')
+dir = join(dirname(__file__), 'data/gmm')
 smp = np.genfromtxt(join(dir, 'smp.csv'), delimiter=',')
 scr = np.genfromtxt(join(dir, 'scr.csv'), delimiter=',')
 

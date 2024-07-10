@@ -9,7 +9,7 @@ from stein_thinning.thinning import thin
 
 @pytest.fixture
 def demo_data_dir():
-    return Path('stein_thinning') / 'sample_chains' / 'gmm'
+    return Path('stein_thinning') / 'demo' / 'data' / 'gmm'
 
 
 @pytest.fixture

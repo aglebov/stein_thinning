@@ -26,5 +26,5 @@ plt.figure()
 plt.scatter(sample[:, 0], sample[:, 1], color='lightgray')
 plt.scatter(sample[idx, 0], sample[idx, 1], color='red')
 
-plt.savefig('stein_thinning/pystan/demo.png')
+plt.savefig('stein_thinning/demo/pystan_demo.png')
 plt.show()
