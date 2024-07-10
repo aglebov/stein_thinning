@@ -1,4 +1,4 @@
-"""Test Stein Thinning."""
+"""Stein thinning for a Gaussian mixture model."""
 
 import numpy as np
 import matplotlib.pyplot as plt
