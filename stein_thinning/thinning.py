@@ -53,6 +53,7 @@ def thin_gf(
         n_points: int,
         standardize: bool = True,
         preconditioner: str = 'id',
+        vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = None,
 ) -> np.ndarray:
     """Optimally select m points from n > m samples generated from a target distribution of d dimensions.
 
@@ -85,6 +86,8 @@ def thin_gf(
         'smpcov', specifying the preconditioner to be used. Alternatively,
         a numeric string can be passed as the single length-scale parameter
         of an isotropic kernel.
+    vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]]
+        Stein kernel to use for calculating discrepancies
 
     Returns
     -------
@@ -120,7 +123,8 @@ def thin_gf(
         gradient_q = gradient_q * scl
 
     # Vectorised Stein kernel function
-    vfk0 = make_imq(sample, preconditioner)
+    if vfk0 is None:
+        vfk0 = make_imq(sample, preconditioner)
 
     def kernel_0():
         return np.exp(log_q - log_p) ** 2 * vfk0(sample, sample, gradient_q, gradient_q)
@@ -137,6 +141,7 @@ def thin(
         n_points: int,
         standardize: bool = True,
         preconditioner: str = 'id',
+        vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = None,
 ) -> np.ndarray:
     """Optimally select m points from n > m samples generated from a target distribution of d dimensions.
 
@@ -157,6 +162,8 @@ def thin(
         'smpcov', specifying the preconditioner to be used. Alternatively,
         a numeric string can be passed as the single length-scale parameter
         of an isotropic kernel.
+    vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]]
+        Stein kernel to use for calculating discrepancies
 
     Returns
     -------
@@ -173,5 +180,6 @@ def thin(
         gradient_q=gradient,
         n_points=n_points,
         standardize=standardize,
-        preconditioner=preconditioner
+        preconditioner=preconditioner,
+        vfk0=vfk0,
     )
