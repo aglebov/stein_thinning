@@ -1,11 +1,10 @@
-from os.path import join, dirname
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from stein_thinning.kernel import vfk0_imq, make_precon
-from stein_thinning.thinning import thin
+from stein_thinning.kernel import vfk0_imq, make_precon, make_imq
+from stein_thinning.thinning import thin, _make_stein_integrand, _greedy_search
 
 
 @pytest.fixture
@@ -36,12 +35,14 @@ def test_thin(demo_smp, demo_scr):
     preconditioner = make_precon(demo_smp, 'id')
     def kernel1(sample1, sample2, gradient1, gradient2):
         return vfk0_imq(sample1, sample2, gradient1, gradient2, preconditioner)
-    idx = thin(demo_smp, demo_scr, 40, vfk0=kernel1)
+    integrand = _make_stein_integrand(demo_smp, demo_scr, vfk0=kernel1)
+    idx = _greedy_search(40, integrand)
     np.testing.assert_array_equal(idx, expected)
 
     def kernel2(sample1, sample2, gradient1, gradient2):
         return vfk0_imq(sample1, sample2, gradient1, gradient2, preconditioner, beta=-0.75)
-    idx = thin(demo_smp, demo_scr, 40, vfk0=kernel2)
+    integrand = _make_stein_integrand(demo_smp, demo_scr, vfk0=kernel2)
+    idx = _greedy_search(40, integrand)
     expected = np.array([
         68, 322, 268, 234, 161, 292, 229, 276, 259, 131, 207, 431, 486,
         120, 457, 430, 412, 376, 111, 101,  97, 332, 394, 123, 429, 109,

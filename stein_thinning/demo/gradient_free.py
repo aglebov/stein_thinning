@@ -13,9 +13,6 @@ from stein_thinning.thinning import thin, thin_gf
 
 # Generate from a mixture model
 def make_mvn_mixture(weights, means, covs):
-    # invert covariances
-    covs_inv = np.linalg.inv(covs)
-
     k, d = means.shape
     assert weights.shape == (k,)
     assert covs.shape == (k, d, d)

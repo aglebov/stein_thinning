@@ -4,11 +4,10 @@ from stein_thinning.stein import kmat, ksd
 
 
 def test_kmat():
-    def kernel(x, y, sx, sy):
-        return (x - y) ** 2
     x = np.array([1.0, 2.0, 5.0, 7.0])
-    s = np.zeros(4)
-    result = kmat(x, s, kernel)
+    def integrand(ind1, ind2):
+        return (x[ind1] - x[ind2]) ** 2
+    result = kmat(integrand, len(x))
     expected = np.array([
         [0.,  1.,  16., 36.],
         [1.,  0.,  9.,  25.],
@@ -19,10 +18,10 @@ def test_kmat():
 
 
 def test_ksd():
-    def kernel(x, y, sx, sy):
-        return (x - y) ** 2
     x = np.array([1.0, 2.0, 5.0, 7.0])
+    def integrand(ind1, ind2):
+        return (x[ind1] - x[ind2]) ** 2
     s = np.zeros(4).reshape(4, 1)
-    result = ksd(x, s, kernel)
+    result = ksd(integrand, len(x))
     expected = np.array([0., np.sqrt(2) / 2, np.sqrt(52) / 3, np.sqrt(182) / 4])
     np.testing.assert_array_equal(result, expected)

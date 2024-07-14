@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, Tuple
 
 import logging
 logger = logging.getLogger(__name__)
@@ -7,23 +7,22 @@ import numpy as np
 from stein_thinning.kernel import make_imq
 
 
+IndexerT = Any
+
+
 def _greedy_search(
         n_points: int,
-        kernel_0: Callable[[], np.ndarray],
-        kernel_1: Callable[[int], np.ndarray]
-) -> np.ndarray:
+        integrand: Callable[[IndexerT, IndexerT], np.ndarray],
+) -> np.ndarray | Tuple[np.ndarray, np.ndarray]:
     """Select points minimising total kernel Stein distance
 
     Parameters
     ----------
     n_points: int
         number of points to select.
-    kernel_0: Callable[[], np.ndarray]
-        function returning values of Stein kernel evaluated between
-        each point and itself, i.e. `k(x, x)`.
-    kernel_1: Callable[[int], np.ndarray]
-        function returning values of Stein kernel evaluated between
-        a point with the given index and all points in the sample.
+    integrand: Callable[[IndexerT, IndexerT], np.ndarray]
+        function returning values of the integrand in the KSD integral
+        for points identified by two indices (row and column).
 
     Returns
     -------
@@ -34,15 +33,93 @@ def _greedy_search(
     idx = np.empty(n_points, dtype=np.uint32)
 
     # Populate columns of k0 as new points are selected
-    k0 = kernel_0()
+    k0 = integrand(slice(None), slice(None))
     idx[0] = np.argmin(k0)
     logger.debug('THIN: %d of %d', 1, n_points)
     for i in range(1, n_points):
-        k0 += 2 * kernel_1(idx[i - 1])
+        k0 += 2 * integrand(slice(None), [idx[i - 1]])
         idx[i] = np.argmin(k0)
         logger.debug('THIN: %d of %d', i + 1, n_points)
 
     return idx
+
+
+def _validate_sample_and_gradient(sample, gradient, standardize):
+    assert sample.ndim == 2, 'sample is not two-dimensional.'
+    n, d = sample.shape
+    assert n > 0 and d > 0, 'sample is empty.'
+    assert not np.any(np.isnan(sample)), 'sample contains NaNs.'
+    assert not np.any(np.isinf(sample)), 'sample contains infs.'
+
+    assert gradient.shape == sample.shape, 'Dimensions of sample and gradient_q are inconsistent.'
+    assert not np.any(np.isnan(gradient)), 'sample contains NaNs.'
+    assert not np.any(np.isinf(gradient)), 'sample contains infs.'
+
+    # Standardisation
+    if standardize:
+        loc = np.mean(sample, axis=0)
+        scl = np.mean(np.abs(sample - loc), axis=0)
+        assert np.min(scl) > 0, 'Too few unique samples in smp.'
+        sample = sample / scl
+        gradient = gradient * scl
+
+    return sample, gradient
+
+
+def _make_stein_integrand(
+        sample: np.ndarray,
+        gradient: np.ndarray,
+        standardize: bool = True,
+        preconditioner: str = 'id',
+        vfk0: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray] = None,
+):
+    # Argument checks
+    sample, gradient = _validate_sample_and_gradient(sample, gradient, standardize)
+
+    # Vectorised Stein kernel function
+    if vfk0 is None:
+        vfk0 = make_imq(sample, preconditioner)
+
+    def integrand(ind1, ind2):
+        return vfk0(sample[ind1], sample[ind2], gradient[ind1], gradient[ind2])
+
+    return integrand
+
+
+def _make_stein_gf_integrand(
+        sample: np.ndarray,
+        log_p: np.ndarray,
+        log_q: np.ndarray,
+        gradient_q: np.ndarray,
+        standardize: bool = True,
+        preconditioner: str = 'id',
+        vfk0: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray] = None,
+):
+    # Argument checks
+    sample, gradient_q = _validate_sample_and_gradient(sample, gradient_q, standardize)
+    n, _ = sample.shape
+
+    def validate_log_prob(vals, var_name):
+        assert vals.ndim == 1 or vals.ndim == 2 and vals.shape[1] == 1, f'{var_name} must be a vector.'
+        assert vals.shape[0] == n, f'Dimensions of sample and {var_name} are inconsistent.'
+        assert not np.any(np.isnan(vals)), f'{var_name} contains NaNs.'
+        assert not np.any(np.isinf(vals)), f'{var_name} contains infs.'
+        return vals.squeeze()
+
+    log_p = validate_log_prob(log_p, 'log_p')
+    log_q = validate_log_prob(log_q, 'log_q')
+
+    # Vectorised Stein kernel function
+    if vfk0 is None:
+        vfk0 = make_imq(sample, preconditioner)
+
+    def integrand(ind1, ind2):
+        return (
+            np.exp(log_q[ind1] - log_p[ind1] + log_q[ind2] - log_p[ind2]) *
+            vfk0(sample[ind1], sample[ind2], gradient_q[ind1], gradient_q[ind2])
+        )
+
+    return integrand
 
 
 def thin_gf(
@@ -53,7 +130,6 @@ def thin_gf(
         n_points: int,
         standardize: bool = True,
         preconditioner: str = 'id',
-        vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = None,
 ) -> np.ndarray:
     """Optimally select m points from n > m samples generated from a target distribution of d dimensions.
 
@@ -86,8 +162,6 @@ def thin_gf(
         'smpcov', specifying the preconditioner to be used. Alternatively,
         a numeric string can be passed as the single length-scale parameter
         of an isotropic kernel.
-    vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]]
-        Stein kernel to use for calculating discrepancies
 
     Returns
     -------
@@ -95,44 +169,8 @@ def thin_gf(
         array shaped (m,) containing the row indices in `sample` (and `gradient`) of the
         selected points.
     """
-    # Argument checks
-    assert sample.ndim == 2, 'sample is not two-dimensional.'
-    n, d = sample.shape
-    assert n > 0 and d > 0, 'sample is empty.'
-    assert not np.any(np.isnan(sample)), 'sample contains NaNs.'
-    assert not np.any(np.isinf(sample)), 'sample contains infs.'
-
-    def validate_log_prob(vals, var_name):
-        assert vals.ndim == 1 or vals.ndim == 2 and vals.shape[1] == 1, f'{var_name} must be a vector.'
-        assert vals.shape[0] == n, f'Dimensions of sample and {var_name} are inconsistent.'
-        assert not np.any(np.isnan(vals)), f'{var_name} contains NaNs.'
-        assert not np.any(np.isinf(vals)), f'{var_name} contains infs.'
-        return vals.squeeze()
-
-    log_p = validate_log_prob(log_p, 'log_p')
-    log_q = validate_log_prob(log_q, 'log_q')
-
-    assert gradient_q.shape == sample.shape, 'Dimensions of sample and gradient_q are inconsistent.'
-
-    # Standardisation
-    if standardize:
-        loc = np.mean(sample, axis=0)
-        scl = np.mean(np.abs(sample - loc), axis=0)
-        assert np.min(scl) > 0, 'Too few unique samples in smp.'
-        sample = sample / scl
-        gradient_q = gradient_q * scl
-
-    # Vectorised Stein kernel function
-    if vfk0 is None:
-        vfk0 = make_imq(sample, preconditioner)
-
-    def kernel_0():
-        return np.exp(log_q - log_p) ** 2 * vfk0(sample, sample, gradient_q, gradient_q)
-
-    def kernel_1(i):
-        return np.exp(log_q - log_p + log_q[i] - log_p[i]) * vfk0(sample, sample[[i]], gradient_q, gradient_q[[i]])
-
-    return _greedy_search(n_points, kernel_0, kernel_1)
+    integrand = _make_stein_gf_integrand(sample, log_p, log_q, gradient_q, standardize, preconditioner)
+    return _greedy_search(n_points, integrand)
 
 
 def thin(
@@ -141,7 +179,6 @@ def thin(
         n_points: int,
         standardize: bool = True,
         preconditioner: str = 'id',
-        vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]] = None,
 ) -> np.ndarray:
     """Optimally select m points from n > m samples generated from a target distribution of d dimensions.
 
@@ -162,8 +199,6 @@ def thin(
         'smpcov', specifying the preconditioner to be used. Alternatively,
         a numeric string can be passed as the single length-scale parameter
         of an isotropic kernel.
-    vfk0: Optional[Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray]]
-        Stein kernel to use for calculating discrepancies
 
     Returns
     -------
@@ -171,15 +206,5 @@ def thin(
         array shaped (m,) containing the row indices in `sample` (and `gradient`) of the
         selected points.
     """
-    n, _ = sample.shape
-    z = np.zeros(n)
-    return thin_gf(
-        sample=sample,
-        log_p=z,
-        log_q=z,
-        gradient_q=gradient,
-        n_points=n_points,
-        standardize=standardize,
-        preconditioner=preconditioner,
-        vfk0=vfk0,
-    )
+    integrand = _make_stein_integrand(sample, gradient, standardize, preconditioner)
+    return _greedy_search(n_points, integrand)
