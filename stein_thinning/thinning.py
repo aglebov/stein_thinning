@@ -51,9 +51,9 @@ def _validate_sample_and_gradient(sample, gradient, standardize):
     assert not np.any(np.isnan(sample)), 'sample contains NaNs.'
     assert not np.any(np.isinf(sample)), 'sample contains infs.'
 
-    assert gradient.shape == sample.shape, 'Dimensions of sample and gradient_q are inconsistent.'
-    assert not np.any(np.isnan(gradient)), 'sample contains NaNs.'
-    assert not np.any(np.isinf(gradient)), 'sample contains infs.'
+    assert gradient.shape == sample.shape, f'Dimensions of sample {sample.shape} and gradient {gradient.shape} are inconsistent.'
+    assert not np.any(np.isnan(gradient)), 'gradient contains NaNs.'
+    assert not np.any(np.isinf(gradient)), 'gradient contains infs.'
 
     # Standardisation
     if standardize:
@@ -69,6 +69,7 @@ def _validate_sample_and_gradient(sample, gradient, standardize):
 def _make_stein_integrand(
         sample: np.ndarray,
         gradient: np.ndarray,
+        *,
         standardize: bool = True,
         preconditioner: str = 'id',
         vfk0: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray] = None,
@@ -91,9 +92,12 @@ def _make_stein_gf_integrand(
         log_p: np.ndarray,
         log_q: np.ndarray,
         gradient_q: np.ndarray,
+        *,
         standardize: bool = True,
         preconditioner: str = 'id',
         vfk0: Callable[[np.ndarray, np.ndarray, np.ndarray, np.ndarray], np.ndarray] = None,
+        log_pq_scale_adjustment: bool = True,
+        range_cap: float = None,
 ):
     # Argument checks
     sample, gradient_q = _validate_sample_and_gradient(sample, gradient_q, standardize)
@@ -106,17 +110,24 @@ def _make_stein_gf_integrand(
         assert not np.any(np.isinf(vals)), f'{var_name} contains infs.'
         return vals.squeeze()
 
-    log_p = validate_log_prob(log_p, 'log_p')
-    log_q = validate_log_prob(log_q, 'log_q')
-
     # Vectorised Stein kernel function
     if vfk0 is None:
         vfk0 = make_imq(sample, preconditioner)
 
+    log_p = validate_log_prob(log_p, 'log_p')
+    log_q = validate_log_prob(log_q, 'log_q')
+    log_q_m_p = log_q - log_p
+
+    if range_cap is not None:
+        assert range_cap > 0, 'Range cap must be positive'
+        np.clip(log_q_m_p, a_min=None, a_max=np.min(log_q_m_p) + range_cap, out=log_q_m_p)
+
+    if log_pq_scale_adjustment:
+        log_q_m_p -= np.max(log_q_m_p)
+
     def integrand(ind1, ind2):
         return (
-            np.exp(log_q[ind1] - log_p[ind1] + log_q[ind2] - log_p[ind2]) *
-            vfk0(sample[ind1], sample[ind2], gradient_q[ind1], gradient_q[ind2])
+            np.exp(log_q_m_p[ind1] + log_q_m_p[ind2]) * vfk0(sample[ind1], sample[ind2], gradient_q[ind1], gradient_q[ind2])
         )
 
     return integrand
@@ -130,6 +141,7 @@ def thin_gf(
         n_points: int,
         standardize: bool = True,
         preconditioner: str = 'id',
+        range_cap: Optional[float] = None,
 ) -> np.ndarray:
     """Optimally select m points from n > m samples generated from a target distribution of d dimensions.
 
@@ -162,6 +174,9 @@ def thin_gf(
         'smpcov', specifying the preconditioner to be used. Alternatively,
         a numeric string can be passed as the single length-scale parameter
         of an isotropic kernel.
+    range_cap: Optional[float]
+        if provided, the values of `log_q - log_p` will be clipped above, so that
+        the resulting range is at most `range_cap`
 
     Returns
     -------
@@ -169,7 +184,15 @@ def thin_gf(
         array shaped (m,) containing the row indices in `sample` (and `gradient`) of the
         selected points.
     """
-    integrand = _make_stein_gf_integrand(sample, log_p, log_q, gradient_q, standardize, preconditioner)
+    integrand = _make_stein_gf_integrand(
+        sample=sample,
+        log_p=log_p,
+        log_q=log_q,
+        gradient_q=gradient_q,
+        standardize=standardize,
+        preconditioner=preconditioner,
+        range_cap=range_cap,
+    )
     return _greedy_search(n_points, integrand)
 
 
@@ -206,5 +229,10 @@ def thin(
         array shaped (m,) containing the row indices in `sample` (and `gradient`) of the
         selected points.
     """
-    integrand = _make_stein_integrand(sample, gradient, standardize, preconditioner)
+    integrand = _make_stein_integrand(
+        sample=sample,
+        gradient=gradient,
+        standardize=standardize,
+        preconditioner=preconditioner,
+    )
     return _greedy_search(n_points, integrand)
