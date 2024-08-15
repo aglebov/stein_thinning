@@ -1,0 +1,34 @@
+﻿stein\_thinning
+===============
+
+.. automodule:: stein_thinning
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+
+   stein_thinning.kernel
+   stein_thinning.stein
+   stein_thinning.thinning
+
