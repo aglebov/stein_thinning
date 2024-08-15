@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>stein_thinning.kernel.vfk0_imq &#8212; Stein Thinning 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e031e9a9"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="stein_thinning.stein" href="stein_thinning.stein.html" />
+    <link rel="prev" title="stein_thinning.kernel.make_precon" href="stein_thinning.kernel.make_precon.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="stein-thinning-kernel-vfk0-imq">
+<h1>stein_thinning.kernel.vfk0_imq<a class="headerlink" href="#stein-thinning-kernel-vfk0-imq" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="stein_thinning.kernel.vfk0_imq">
+<span class="sig-prename descclassname"><span class="pre">stein_thinning.kernel.</span></span><span class="sig-name descname"><span class="pre">vfk0_imq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-0.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#stein_thinning.kernel.vfk0_imq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate Stein kernel based on inverse multiquadratic kernel</p>
+<p>The Stein kernel is evaluated for pairs of points and requires
+the values of gradients at the same points to be supplied.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>x: np.ndarray</dt><dd><p>n x d array where each row is a d-dimensional sample point for the first
+argument of the kernel. Alternatively, 1 x d array that will be broadcast
+with <cite>y</cite>.</p>
+</dd>
+<dt>y: np.ndarray</dt><dd><p>n x d array where each row is a d-dimensional sample point for the second
+argument of the kernel. Alternatively, 1 x d array that will be broadcast
+with <cite>x</cite>.</p>
+</dd>
+<dt>sx: np.ndarray</dt><dd><p>n x d array where each row is a d-dimensional gradient calculated at
+the corresponding point in <cite>x</cite>. Alternatively, 1 x d array that will be
+broadcast with <cite>sy</cite>.</p>
+</dd>
+<dt>sy: np.ndarray</dt><dd><p>n x d array where each row is a d-dimensional gradient calculated at
+the corresponding point in <cite>y</cite>. Alternatively, 1 x d array that will be
+broadcast with <cite>sx</cite>.</p>
+</dd>
+<dt>linv: np.ndarray</dt><dd><p>d x d preconditioner matrix.</p>
+</dd>
+<dt>c: float</dt><dd><p>parameter of the inverse multiquadratic kernel. Default: 1.0.</p>
+</dd>
+<dt>beta: float</dt><dd><p>exponent of the inverse multiquadratic kernel. Default: -0.5.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>np.ndarray</dt><dd><p>array of length n with values of the kernel evaluated for each pair of points</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Stein Thinning</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="stein_thinning.html">stein_thinning</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../api.html">API</a><ul>
+  <li><a href="stein_thinning.html">stein_thinning</a><ul>
+  <li><a href="stein_thinning.kernel.html">stein_thinning.kernel</a><ul>
+      <li>Previous: <a href="stein_thinning.kernel.make_precon.html" title="previous chapter">stein_thinning.kernel.make_precon</a></li>
+      <li>Next: <a href="stein_thinning.stein.html" title="next chapter">stein_thinning.stein</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, Stein Thinning Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../_sources/_autosummary/stein_thinning.kernel.vfk0_imq.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

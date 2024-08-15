@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>stein_thinning.thinning.thin_gf &#8212; Stein Thinning 0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=039e1c02" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=e031e9a9"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="stein_thinning.thinning.thin" href="stein_thinning.thinning.thin.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="stein-thinning-thinning-thin-gf">
+<h1>stein_thinning.thinning.thin_gf<a class="headerlink" href="#stein-thinning-thinning-thin-gf" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="stein_thinning.thinning.thin_gf">
+<span class="sig-prename descclassname"><span class="pre">stein_thinning.thinning.</span></span><span class="sig-name descname"><span class="pre">thin_gf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preconditioner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range_cap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="headerlink" href="#stein_thinning.thinning.thin_gf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimally select m points from n &gt; m samples generated from a target distribution of d dimensions.</p>
+<p>This function is based on the gradient-free kernel Stein discrepancy,
+which uses an auxiliary distribution q as a proxy for the target distribution.
+This is useful when the gradient of the target distribution is difficult to obtain,
+so instead the gradient of the proxy distribution is used.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>sample: np.ndarray</dt><dd><p>n x d array where each row is a sample point.</p>
+</dd>
+<dt>log_p: np.ndarray</dt><dd><p>n x 1 array of log-pdf values for the target distribution corresponding
+to points in <cite>sample</cite>.</p>
+</dd>
+<dt>log_q: np.ndarray</dt><dd><p>n x 1 array of log-pdf values for the proxy distribution corresponding
+to points in <cite>sample</cite>.</p>
+</dd>
+<dt>gradient_q: np.ndarray</dt><dd><p>n x d array of gradient of the proxy distribution corresponding to points
+in <cite>sample</cite>.</p>
+</dd>
+<dt>n_points: int</dt><dd><p>integer specifying the desired number of points.</p>
+</dd>
+<dt>standardize: bool</dt><dd><p>optional logical, either ‘True’ (default) or ‘False’, indicating
+whether or not to standardise the columns of <cite>sample</cite> around means
+using the mean absolute deviation from the mean as the scale.</p>
+</dd>
+<dt>preconditioner: str</dt><dd><p>optional string, either ‘id’ (default), ‘med’, ‘sclmed’, or
+‘smpcov’, specifying the preconditioner to be used. Alternatively,
+a numeric string can be passed as the single length-scale parameter
+of an isotropic kernel.</p>
+</dd>
+<dt>range_cap: Optional[float]</dt><dd><p>if provided, the values of <cite>log_q - log_p</cite> will be clipped above, so that
+the resulting range is at most <cite>range_cap</cite></p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>np.ndarray</dt><dd><p>array shaped (m,) containing the row indices in <cite>sample</cite> (and <cite>gradient</cite>) of the
+selected points.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Stein Thinning</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="stein_thinning.html">stein_thinning</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="../api.html">API</a><ul>
+  <li><a href="stein_thinning.html">stein_thinning</a><ul>
+  <li><a href="stein_thinning.thinning.html">stein_thinning.thinning</a><ul>
+      <li>Previous: <a href="stein_thinning.thinning.thin.html" title="previous chapter">stein_thinning.thinning.thin</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, Stein Thinning Team.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+      |
+      <a href="../_sources/_autosummary/stein_thinning.thinning.thin_gf.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
