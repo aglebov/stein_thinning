@@ -87,7 +87,7 @@ it takes a single function call to start Stein Thinning:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">samples</span></code> is an array with <span class="math notranslate nohighlight">\(n\)</span> rows and <span class="math notranslate nohighlight">\(d\)</span> columns, whose rows are the samples produced by a sampling method, such as MCMC,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">gradients</span></code> is an array with <span class="math notranslate nohighlight">\(n\)</span> rows and <span class="math notranslate nohighlight">\(d\)</span> columns, whose rows contain the gradients <span class="math notranslate nohighlight">\(\nabla\log p(x)\)</span> where <span class="math notranslate nohighlight">\(x\)</span> is the corresponding row of <code class="docutils literal notranslate"><span class="pre">samples</span></code>,</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">m</span></code> is an integer, specifying the number of representative samples required,</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">indices</span></code> is a vector of length <span class="math notranslate nohighlight">\(m\)</span>, whose elements are integers in <span class="math notranslate nohighlight">\({1,\dots,n\}\)</span>, indicating which samples were selected.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">indices</span></code> is a vector of length <span class="math notranslate nohighlight">\(m\)</span>, whose elements are integers in <span class="math notranslate nohighlight">\(\{1,\dots,n\}\)</span>, indicating which samples were selected.</p></li>
 </ul>
 </section>
 <section id="stan-examples">
