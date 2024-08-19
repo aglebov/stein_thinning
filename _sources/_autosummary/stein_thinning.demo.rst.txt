@@ -1,0 +1,23 @@
+stein\_thinning.demo
+====================
+
+.. automodule:: stein_thinning.demo
+  
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

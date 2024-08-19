@@ -28,6 +28,7 @@
    :template: custom-module-template.rst
    :recursive:
 
+   stein_thinning.demo
    stein_thinning.kernel
    stein_thinning.stein
    stein_thinning.thinning
